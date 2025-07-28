@@ -1,26 +1,15 @@
-FROM debian:bookworm-slim
+FROM python:3.11-slim
 
-# Cài các gói cần thiết
-RUN apt-get update && \
-    apt-get install -y curl nodejs npm bash gnupg && \
-    curl -fsSL https://code-server.dev/install.sh | sh
+# Cài Jupyter và tiện ích hệ thống
+RUN apt-get update && apt-get install -y \
+    curl git neofetch sudo && \
+    pip install notebook && \
+    useradd -ms /bin/bash user && \
+    echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-# Cài ngrok
-RUN npm install -g ngrok && \
-    ngrok config add-authtoken 2tEx6KjA194d2NCfq4kP1BvxD7r_4X3W1XpjczMLfZDctmcsk
+# Mặc định vào thư mục user
+WORKDIR /home/user
+USER root
 
-# Chạy code-server và ngrok, in public URL, đếm ngược
-RUN code-server --bind-addr 0.0.0.0:8080 --auth none & \
-    ngrok http 8080 > /dev/null & \
-    sleep 5 && \
-    public_url=$(curl -s http://127.0.0.1:4040/api/tunnels | grep -o 'https://[^"]*') && \
-    echo "Public URL của ngrok: $public_url" && \
-    total_seconds=2592000 && \
-    while [ $total_seconds -gt 0 ]; do \
-        hours=$((total_seconds / 3600)); \
-        minutes=$(( (total_seconds % 3600) / 60 )); \
-        seconds=$((total_seconds % 60)); \
-        printf "Thời gian còn lại: %02d giờ %02d phút %02d giây\n" $hours $minutes $seconds; \
-        sleep 1; \
-        total_seconds=$((total_seconds - 1)); \
-    done
+# Mở Jupyter Notebook
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''"]
