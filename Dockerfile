@@ -1,18 +1,15 @@
-FROM alpine
+FROM debian:bookworm-slim
 
-# Cài đặt các công cụ cần thiết
-RUN apk add --no-cache curl nodejs npm bash coreutils grep
+# Cài các gói cần thiết
+RUN apt-get update && \
+    apt-get install -y curl nodejs npm bash gnupg && \
+    curl -fsSL https://code-server.dev/install.sh | sh
 
-# Cài đặt code-server
-RUN curl -fsSL https://code-server.dev/install.sh | sh
+# Cài ngrok
+RUN npm install -g ngrok && \
+    ngrok config add-authtoken 2tEx6KjA194d2NCfq4kP1BvxD7r_4X3W1XpjczMLfZDctmcsk
 
-# Cài đặt ngrok
-RUN npm install -g ngrok
-
-# Thiết lập ngrok authtoken
-RUN ngrok config add-authtoken 2tEx6KjA194d2NCfq4kP1BvxD7r_4X3W1XpjczMLfZDctmcsk
-
-# Khởi động code-server và ngrok, lấy public URL, sau đó đếm ngược 30 ngày
+# Chạy code-server và ngrok, in public URL, đếm ngược
 RUN code-server --bind-addr 0.0.0.0:8080 --auth none & \
     ngrok http 8080 > /dev/null & \
     sleep 5 && \
